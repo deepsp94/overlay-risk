@@ -16,7 +16,8 @@ def get_config() -> tp.Dict:
     return {
         "token": os.getenv('INFLUXDB_TOKEN'),
         "org": os.getenv('INFLUXDB_ORG'),
-        "bucket": "ovl_kv1o",
+        #"bucket": "ovl_kv1o",
+		"bucket": os.getenv('INFLUXDB_BUCKET'),
         "url": os.getenv("INFLUXDB_URL"),
     }
 
@@ -129,7 +130,7 @@ def main():
             _, stats = get_stats(kv1o, q, params)
             print('stats', stats)
             stats.to_csv(
-                f"csv/{q['id']}-{int(datetime.now().timestamp())}.csv",
+                f"csv/{q['id'].replace(':', '-').replace(' / ', '-')}-{int(datetime.now().timestamp())}.csv", # Replaced special characters from file names
                 index=False,
             )
             point = Point("mem")\
@@ -145,7 +146,16 @@ def main():
 
             print(f"Writing {q['id']} to api ...")
             write_api.write(config['bucket'], config['org'], point)
-        except:
+        except Exception as e:
             print("Failed to write quote stats to influx")
+            err_cls = e.__class__
+            err_msg = str(e)
+            msg = f'''
+            Error type = {err_cls}
+            Error message = {err_msg}
+            '''
+            print(msg)
+            
+            print('check')
 
     client.close()
