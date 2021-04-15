@@ -111,10 +111,10 @@ def get_stats(kv1o, q: tp.Dict, p: tp.Dict) -> (str, pd.DataFrame):
 
     return pair, df
 
-def create_csv(df: pd.DataFrame, q: tp.Dict, csv_dir: bool):
+def create_csv(df: pd.DataFrame, q: tp.Dict):
     
     # Create directory called 'csv' only if it does not exist
-    if not csv_dir:
+    if not os.path.exists('csv'):
         os.makedirs('csv')
 
     # Name the csv file
@@ -132,7 +132,6 @@ def main():
     params = get_params()
     quotes = get_quotes()
     kv1o = KV1O()
-    csv_dir = os.path.exists('csv')
 
     client = create_client(config)
     write_api = client.write_api(
@@ -145,7 +144,7 @@ def main():
         try:
             _, stats = get_stats(kv1o, q, params)
             print('stats', stats)
-            create_csv(stats, q, csv_dir)
+            create_csv(stats, q)
             point = Point("mem")\
                 .tag("id", q['id'])\
                 .time(
