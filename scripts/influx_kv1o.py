@@ -3,6 +3,7 @@ import numpy as np
 import os
 import json
 import typing as tp
+import time # delete this in prod
 
 from brownie import network, Contract
 from datetime import datetime
@@ -109,6 +110,7 @@ def get_stats(kv1o, q: tp.Dict, p: tp.Dict) -> (str, pd.DataFrame):
                   'VaR 1% * a^n', 'VaR 0.1% * a^n',
                   'VaR 0.01% * a^n']
 
+    df['timestamp'] = int(time.time()) # just a simulation. delete this in prod
     return pair, df
 
 def create_csv(df: pd.DataFrame, q: tp.Dict):
