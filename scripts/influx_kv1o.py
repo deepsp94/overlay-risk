@@ -134,43 +134,46 @@ def main():
     params = get_params()
     quotes = get_quotes()
     kv1o = KV1O()
+    run = 0
 
-    client = create_client(config)
-    write_api = client.write_api(
-        write_options=SYNCHRONOUS,
-        point_settings=get_point_settings(),
-    )
+    while run == 0:
 
-    for q in quotes:
-        print('id', q['id'])
-        try:
-            _, stats = get_stats(kv1o, q, params)
-            print('stats', stats)
-            create_csv(stats, q)
-            point = Point("mem")\
-                .tag("id", q['id'])\
-                .time(
-                    datetime.fromtimestamp(float(stats['timestamp'])),
-                    WritePrecision.NS
-                )
+        client = create_client(config)
+        write_api = client.write_api(
+            write_options=SYNCHRONOUS,
+            point_settings=get_point_settings(),
+        )
+        
+        for q in quotes:
+            print('id', q['id'])
+            try:
+                _, stats = get_stats(kv1o, q, params)
+                print('stats', stats)
+                create_csv(stats, q)
+                point = Point("mem")\
+                    .tag("id", q['id'])\
+                    .time(
+                        datetime.fromtimestamp(float(stats['timestamp'])),
+                        WritePrecision.NS
+                    )
 
-            for col in stats.columns:
-                if col != 'timestamp':
-                    point = point.field(col, float(stats[col]))
+                for col in stats.columns:
+                    if col != 'timestamp':
+                        point = point.field(col, float(stats[col]))
 
-            print(f"Writing {q['id']} to api ...")
-            write_api.write(config['bucket'], config['org'], point)
+                print(f"Writing {q['id']} to api ...")
+                write_api.write(config['bucket'], config['org'], point)
 
-        except Exception as e:
-            err_cls = e.__class__
-            err_msg = str(e)
-            msg = f'''
-            Failed to write quote stats to influx.
-            Error type = {err_cls}
-            Error message = {err_msg}
-            '''
-            print(msg)
-            
+            except Exception as e:
+                err_cls = e.__class__
+                err_msg = str(e)
+                msg = f'''
+                Failed to write quote stats to influx.
+                Error type = {err_cls}
+                Error message = {err_msg}
+                '''
+                print(msg)
+                
 
-    client.close()
+        client.close()
 
