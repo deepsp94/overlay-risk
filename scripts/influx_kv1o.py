@@ -151,7 +151,7 @@ def main():
                 print('stats', stats)
                 create_csv(stats, q)
                 point = Point("mem")\
-                    .tag("id", q['id'].replace(':', ' ').replace(' / ', ' '))\
+                    .tag("id", q['id'].replace(' / ', ' '))\
                     .time(
                         datetime.fromtimestamp(float(stats['timestamp'])),
                         WritePrecision.NS
