@@ -3,7 +3,6 @@ import numpy as np
 import os
 import json
 import typing as tp
-import time # delete this in prod
 
 from brownie import network, Contract
 from datetime import datetime
@@ -106,11 +105,11 @@ def get_stats(kv1o, q: tp.Dict, p: tp.Dict) -> (str, pd.DataFrame):
     data = np.concatenate(([timestamp, mu, ss], vars), axis=None)
 
     df = pd.DataFrame(data=data).T
-    df.columns = ['timestamp', 'mu', 'sigSqrd', 'VaR 5% * a^n',
-                  'VaR 1% * a^n', 'VaR 0.1% * a^n',
-                  'VaR 0.01% * a^n']
+    df.columns = ['timestamp', 'mu', 'sigSqrd', 'VaR 5',
+                  'VaR 1', 'VaR 0.1',
+                  'VaR 0.01']
 
-    df['timestamp'] = int(time.time()) # just a simulation. delete this in prod
+    df['timestamp'] = int(datetime.utcnow().timestamp()) - 19800 # just a simulation. delete this in prod
     return pair, df
 
 def create_csv(df: pd.DataFrame, q: tp.Dict):
@@ -123,7 +122,7 @@ def create_csv(df: pd.DataFrame, q: tp.Dict):
     name_quote = q['id'].replace(':', '-').replace(' / ', '-') # Replace special characters from file names
 
     df.to_csv(
-        f"csv/{name_quote}-{int(datetime.now().timestamp())}.csv", 
+        f"csv/{name_quote}-{int(datetime.utcnow().timestamp())}.csv", 
         index=False,
     )
 
@@ -134,43 +133,48 @@ def main():
     params = get_params()
     quotes = get_quotes()
     kv1o = KV1O()
+    run = 0
 
-    client = create_client(config)
-    write_api = client.write_api(
-        write_options=SYNCHRONOUS,
-        point_settings=get_point_settings(),
-    )
+    while run == 0:
 
-    for q in quotes:
-        print('id', q['id'])
-        try:
-            _, stats = get_stats(kv1o, q, params)
-            print('stats', stats)
-            create_csv(stats, q)
-            point = Point("mem")\
-                .tag("id", q['id'])\
-                .time(
-                    datetime.fromtimestamp(float(stats['timestamp'])),
-                    WritePrecision.NS
-                )
+        client = create_client(config)
+        write_api = client.write_api(
+            write_options=SYNCHRONOUS,
+            point_settings=get_point_settings(),
+        )
+        
+        
+        for q in quotes:
+            print('id', q['id'])
+            try:
+                _, stats = get_stats(kv1o, q, params)
+                print('stats', stats)
+                create_csv(stats, q)
+                point = Point("mem")\
+                    .tag("id", q['id'].replace(':', ' ').replace(' / ', ' '))\
+                    .time(
+                        datetime.fromtimestamp(float(stats['timestamp'])),
+                        WritePrecision.NS
+                    )
 
-            for col in stats.columns:
-                if col != 'timestamp':
-                    point = point.field(col, float(stats[col]))
+                for col in stats.columns:
+                    if col != 'timestamp':
+                        point = point.field(col, float(stats[col]))
 
-            print(f"Writing {q['id']} to api ...")
-            write_api.write(config['bucket'], config['org'], point)
+                print(f"Writing {q['id']} to api ...")
+                write_api.write(config['bucket'], config['org'], point)
 
-        except Exception as e:
-            err_cls = e.__class__
-            err_msg = str(e)
-            msg = f'''
-            Failed to write quote stats to influx.
-            Error type = {err_cls}
-            Error message = {err_msg}
-            '''
-            print(msg)
-            
+            except Exception as e:
+                err_cls = e.__class__
+                err_msg = str(e)
+                msg = f'''
+                Failed to write quote stats to influx.
+                Error type = {err_cls}
+                Error message = {err_msg}
+                '''
+                print(msg)
+                
 
-    client.close()
+        client.close()
+
 
