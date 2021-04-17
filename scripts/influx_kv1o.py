@@ -110,7 +110,7 @@ def get_stats(kv1o, q: tp.Dict, p: tp.Dict) -> (str, pd.DataFrame):
                   'VaR 1% * a^n', 'VaR 0.1% * a^n',
                   'VaR 0.01% * a^n']
 
-    df['timestamp'] = int(time.time()) # just a simulation. delete this in prod
+    df['timestamp'] = int(datetime.utcnow().timestamp()) - 19800 # just a simulation. delete this in prod
     return pair, df
 
 def create_csv(df: pd.DataFrame, q: tp.Dict):
@@ -120,7 +120,7 @@ def create_csv(df: pd.DataFrame, q: tp.Dict):
         os.makedirs('csv')
 
     # Name the csv file
-    name_quote = q['id'].replace(':', '-').replace(' / ', '-') # Replace special characters from file names
+    name_quote = q['id'].replace(':', '-').replace(' / ', ' ') # Replace special characters from file names
 
     df.to_csv(
         f"csv/{name_quote}-{int(datetime.now().timestamp())}.csv", 
@@ -151,7 +151,7 @@ def main():
                 print('stats', stats)
                 create_csv(stats, q)
                 point = Point("mem")\
-                    .tag("id", q['id'])\
+                    .tag("id", q['id'].replace(' / ', '-'))\
                     .time(
                         datetime.fromtimestamp(float(stats['timestamp'])),
                         WritePrecision.NS
