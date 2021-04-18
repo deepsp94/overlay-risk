@@ -106,9 +106,9 @@ def get_stats(kv1o, q: tp.Dict, p: tp.Dict) -> (str, pd.DataFrame):
     data = np.concatenate(([timestamp, mu, ss], vars), axis=None)
 
     df = pd.DataFrame(data=data).T
-    df.columns = ['timestamp', 'mu', 'sigSqrd', 'VaR 5% * a^n',
-                  'VaR 1% * a^n', 'VaR 0.1% * a^n',
-                  'VaR 0.01% * a^n']
+    df.columns = ['timestamp', 'mu', 'sigSqrd', 'VaR 5',
+                  'VaR 1', 'VaR 0.1',
+                  'VaR 0.01']
 
     df['timestamp'] = int(datetime.utcnow().timestamp()) - 19800 # just a simulation. delete this in prod
     return pair, df
